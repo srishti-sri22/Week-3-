@@ -32,18 +32,22 @@ fn main() -> Result<(), reqwest::Error> {
         println!("Failed to fetch balance: {}", balance_response.message);
     }
 
-    let tx_response = api::get_transactions(address, page,offset).expect("Cannot fetch the transactions!");
-    if tx_response.status == "1" {
-        println!("Transactions for {}:", address);
-        for tx in tx_response.result.iter() {
-            println!(
-                "Hash: {}, From: {}, To: {}, Value: {}",
-                tx.hash, tx.from, tx.to, tx.value
+    let mut current_page = 1;
+    while current_page <= page {
+        let tx_response = api::get_transactions(address, current_page, offset).expect("Cannot fetch the transactions!");
+
+        if tx_response.result.is_empty() {
+            println!("No more transactions found.");
+            break;
+        }
+
+        println!("Transactions - Page {}:", current_page);
+        for tx in &tx_response.result {
+            println!("Hash: {}, From: {}, To: {}, Value: {}", tx.hash, tx.from, tx.to, tx.value
             );
         }
-    } else {
-        println!("Failed to fetch transactions: {}", tx_response.message);
-    }
 
+        current_page += 1;
+    }
     Ok(())
 }
